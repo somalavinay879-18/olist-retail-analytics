@@ -87,6 +87,12 @@ def test_monthly_kpis(built):
     assert mar[7] == pytest.approx(240 / 140 - 1)
 
 
+def test_monthly_delivery_counts(built):
+    rows = {r[0]: r[1:] for r in built.con.execute(
+        "SELECT year_month, delivered_orders, late_orders FROM kpi_monthly").fetchall()}
+    assert rows == {"2017-01": (2, 1), "2017-02": (1, 0), "2017-03": (1, 0)}
+
+
 def test_canceled_orders_are_not_revenue(built):
     total = one(built.con, "SELECT sum(revenue) FROM kpi_monthly")
     assert total == pytest.approx(730)  # would be 1729 if the canceled 999 were counted

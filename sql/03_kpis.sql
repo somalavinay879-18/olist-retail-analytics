@@ -9,6 +9,8 @@ WITH m AS (
         sum(items_value) FILTER (WHERE is_valid_sale) AS revenue,
         sum(items_value) FILTER (WHERE is_valid_sale)
             / NULLIF(count(*) FILTER (WHERE is_valid_sale), 0) AS aov,
+        count(*) FILTER (WHERE is_delivered) AS delivered_orders,
+        count(*) FILTER (WHERE is_late) AS late_orders,
         avg(delivery_days) FILTER (WHERE is_delivered) AS avg_delivery_days,
         CAST(count(*) FILTER (WHERE is_late) AS DOUBLE)
             / NULLIF(count(*) FILTER (WHERE is_delivered), 0) AS late_rate,

@@ -27,6 +27,7 @@ CSV files -> raw_* (text) -> stg_* (typed, cleaned) -> star schema -> KPI views 
 | KPIs | `sql/03_kpis.sql` | monthly, category, state and seller views |
 | Quality | `olist/quality.py` | 15 error checks, 5 warnings, markdown report |
 | Run | `olist/pipeline.py` | runs everything, exports CSVs for BI tools |
+| Dashboard | `dashboard/app.py` | Streamlit app on the KPI tables |
 
 ## Data model
 
@@ -89,12 +90,23 @@ pytest -q
 
 The tests run the whole pipeline on a tiny synthetic dataset with the same files and columns as the real one (`tests/synthetic.py`), so they run in CI without the real data. Expected KPI values were calculated by hand. A second dataset with deliberately broken rows checks that the quality checks catch them.
 
+## Dashboard
+
+A Streamlit dashboard shows the KPIs: headline numbers, revenue and orders per month, late deliveries and review scores, categories, regions and sellers. It reads the aggregated KPI tables in `dashboard/data/`.
+
+```bash
+pip install -r dashboard/requirements.txt
+streamlit run dashboard/app.py
+```
+
+To refresh the data after a pipeline run: `cp data/processed/kpi_*.csv dashboard/data/`
+
 ## Data and license
 
 The dataset is not included in this repository. It is published by Olist on Kaggle under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/); this project is non-commercial and credits the source. The code in this repository is MIT licensed.
 
 ## Roadmap
 
-- Power BI / Tableau dashboard on the exported tables
+- Publish the Streamlit dashboard online
 - Weekly demand forecasting: seasonal-naive baseline vs gradient boosting with time-based validation
 - Inventory logic: safety stock and reorder points from forecast error
