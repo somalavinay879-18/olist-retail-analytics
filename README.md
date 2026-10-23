@@ -2,6 +2,8 @@
 
 ![CI](https://github.com/somalavinay879-18/olist-retail-analytics/actions/workflows/ci.yml/badge.svg)
 
+**[Live dashboard](https://olist-retail-analytics-m4gmzrukba258sgprrpdke.streamlit.app)**
+
 An end-to-end analytics project on a real Brazilian e-commerce dataset (about 100,000 orders, 2016–2018). Raw CSV files are loaded into DuckDB, cleaned, modelled as a star schema, checked with automated data quality tests and turned into KPIs for sales and delivery performance.
 
 **Business questions**
@@ -107,6 +109,5 @@ The dataset is not included in this repository. It is published by Olist on Kagg
 
 ## Roadmap
 
-- Publish the Streamlit dashboard online
 - Weekly demand forecasting: seasonal-naive baseline vs gradient boosting with time-based validation
 - Inventory logic: safety stock and reorder points from forecast error
