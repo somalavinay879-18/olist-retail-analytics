@@ -13,11 +13,11 @@ from olist.quality import has_errors, run_checks, write_report
 from olist.sqlutil import split_statements
 
 SQL_DIR = Path(__file__).resolve().parents[1] / "sql"
-SQL_STEPS = ["01_staging.sql", "02_star_schema.sql", "03_kpis.sql"]
+SQL_STEPS = ["01_staging.sql", "02_star_schema.sql", "03_kpis.sql", "04_weekly_demand.sql"]
 EXPORT_TABLES = [
     "dim_customers", "dim_products", "dim_sellers", "dim_date",
     "fact_orders", "fact_order_items",
-    "kpi_monthly", "kpi_category", "kpi_state", "kpi_seller",
+    "kpi_monthly", "kpi_category", "kpi_state", "kpi_seller", "weekly_demand",
 ]
 
 

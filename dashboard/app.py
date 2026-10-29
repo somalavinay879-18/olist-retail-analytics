@@ -60,8 +60,8 @@ c3.metric("Average order value", f"{aov:,.0f} BRL")
 c4.metric("Late deliveries", f"{late_rate:.1f} %")
 c5.metric("Avg delivery time", f"{avg_days:.1f} days")
 
-tab_sales, tab_delivery, tab_category, tab_region, tab_seller = st.tabs(
-    ["Sales", "Delivery", "Categories", "Regions", "Sellers"])
+tab_sales, tab_delivery, tab_category, tab_region, tab_seller, tab_forecast = st.tabs(
+    ["Sales", "Delivery", "Categories", "Regions", "Sellers", "Forecast"])
 
 with tab_sales:
     st.subheader("Revenue per month (BRL)")
@@ -135,6 +135,39 @@ with tab_seller:
     st.dataframe(sel[["seller_id", "orders", "delivered_orders", "late_orders", "late_pct", "revenue"]],
                  hide_index=True)
     st.caption("Seller IDs are anonymised in the source data.")
+
+with tab_forecast:
+    needed = ["forecast_metrics", "forecast_by_category", "forecast_vs_actual", "inventory_policy"]
+    if not all((DATA / f"{name}.csv").is_file() for name in needed):
+        st.info("Forecast files not found. Run `python -m olist.forecast` and copy "
+                "`reports/forecast/*.csv` to `dashboard/data/`.")
+    else:
+        metrics = load("forecast_metrics")
+        by_cat = load("forecast_by_category")
+        fva = load("forecast_vs_actual")
+        inventory = load("inventory_policy")
+        names = {"naive_last_week": "Same as last week", "moving_average_4": "Average of last 4 weeks",
+                 "gradient_boosting": "Gradient boosting"}
+        st.subheader("One-week-ahead forecast of weekly units per category")
+        st.caption("Trained on earlier weeks, tested on the last 12 weeks. Lower error is better. "
+                   "WAPE = total absolute error / total actual units.")
+        shown = metrics.assign(model=metrics["model"].map(names),
+                               wape_pct=(metrics["wape"] * 100).round(1), mae=metrics["mae"].round(2))
+        st.dataframe(shown[["model", "wape_pct", "mae"]], hide_index=True)
+
+        category_choice = st.selectbox("Category", sorted(fva["category_en"].unique()))
+        part = fva[fva["category_en"] == category_choice].set_index("week_start")
+        part = part.rename(columns={"units": "Actual", **names})
+        st.line_chart(part[["Actual", "Same as last week", "Average of last 4 weeks", "Gradient boosting"]])
+
+        st.subheader("Inventory illustration")
+        lead = int(inventory["lead_time_weeks"].iloc[0])
+        level = int(round(inventory["service_level"].iloc[0] * 100))
+        st.caption(f"Safety stock = z x forecast error x sqrt(lead time); reorder point = forecast demand during "
+                   f"lead time + safety stock. Assumptions: {lead}-week lead time, {level}% service level. "
+                   "Olist sellers hold the stock, so this shows the method rather than a real policy.")
+        table = inventory[["category_en", "avg_weekly_forecast", "safety_stock", "reorder_point"]].round(1)
+        st.dataframe(table, hide_index=True)
 
 st.divider()
 st.caption("Data: Brazilian E-Commerce Public Dataset by Olist (Kaggle), CC BY-NC-SA 4.0. "

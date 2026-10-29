@@ -2,8 +2,6 @@
 
 ![CI](https://github.com/somalavinay879-18/olist-retail-analytics/actions/workflows/ci.yml/badge.svg)
 
-**[Live dashboard](https://olist-retail-analytics-m4gmzrukba258sgprrpdke.streamlit.app)**
-
 An end-to-end analytics project on a real Brazilian e-commerce dataset (about 100,000 orders, 2016–2018). Raw CSV files are loaded into DuckDB, cleaned, modelled as a star schema, checked with automated data quality tests and turned into KPIs for sales and delivery performance.
 
 **Business questions**
@@ -29,7 +27,8 @@ CSV files -> raw_* (text) -> stg_* (typed, cleaned) -> star schema -> KPI views 
 | KPIs | `sql/03_kpis.sql` | monthly, category, state and seller views |
 | Quality | `olist/quality.py` | 15 error checks, 5 warnings, markdown report |
 | Run | `olist/pipeline.py` | runs everything, exports CSVs for BI tools |
-| Dashboard | `dashboard/app.py` | Streamlit app on the KPI tables |
+| Forecast | `olist/forecast.py` | weekly demand forecast, model comparison, safety stock and reorder point |
+| Dashboard | `dashboard/app.py` | Streamlit app on the KPI tables and forecast |
 
 ## Data model
 
@@ -103,11 +102,35 @@ streamlit run dashboard/app.py
 
 To refresh the data after a pipeline run: `cp data/processed/kpi_*.csv dashboard/data/`
 
+## Demand forecast and inventory logic
+
+`python -m olist.forecast` forecasts weekly units sold for the 10 largest product categories, one week ahead. It trains only on earlier weeks and is tested on the last 12 weeks. Gradient boosting (scikit-learn) is compared with two simple baselines: "same as last week" and "average of the last 4 weeks". Results are reported as MAE and WAPE.
+
+From the forecast error of the best model, the script calculates a safety stock and a reorder point per category (safety stock = z × error standard deviation × √lead time). Lead time (2 weeks) and service level (95%) are assumptions. Olist sellers hold the stock, so this illustrates the method and is not a real policy.
+
+```bash
+pip install -r requirements.txt
+python -m olist.pipeline          # builds the weekly_demand view
+python -m olist.forecast          # writes reports/forecast/*.csv
+```
+
+The Forecast tab of the dashboard shows the results (copy `reports/forecast/*.csv` to `dashboard/data/`).
+
+### Results (last 12 weeks, 10 categories, one week ahead)
+
+| Model | MAE (units) | WAPE |
+|---|---:|---:|
+| Same as last week | 25.4 | **22.6 %** |
+| Gradient boosting | 27.3 | 24.3 % |
+| Average of last 4 weeks | 28.0 | 24.9 % |
+
+The simple "same as last week" baseline is the best model here. Gradient boosting did not beat it with 65 weeks of training data, so the reorder points below are based on the baseline. More history, promotion and holiday data would be needed to improve on it.
+
 ## Data and license
 
 The dataset is not included in this repository. It is published by Olist on Kaggle under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/); this project is non-commercial and credits the source. The code in this repository is MIT licensed.
 
 ## Roadmap
 
-- Weekly demand forecasting: seasonal-naive baseline vs gradient boosting with time-based validation
-- Inventory logic: safety stock and reorder points from forecast error
+- Publish the Streamlit dashboard online
+- Hierarchical or probabilistic forecasts; promotion and holiday effects

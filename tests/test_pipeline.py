@@ -93,6 +93,18 @@ def test_monthly_delivery_counts(built):
     assert rows == {"2017-01": (2, 1), "2017-02": (1, 0), "2017-03": (1, 0)}
 
 
+def test_weekly_demand_view(built):
+    rows = {(r[0], str(r[1])): r[2:] for r in built.con.execute(
+        "SELECT category_en, week_start, units, revenue FROM weekly_demand").fetchall()}
+    assert rows == {
+        ("health_beauty", "2017-01-09"): (1, pytest.approx(100)),
+        ("health_beauty", "2017-01-30"): (1, pytest.approx(80)),    # Sunday 5 Feb belongs to the week of 30 Jan
+        ("health_beauty", "2017-02-27"): (2, pytest.approx(240)),
+        ("pc_gamer", "2017-02-20"): (1, pytest.approx(60)),          # the canceled 999 order is excluded
+        ("sports_leisure", "2017-01-09"): (2, pytest.approx(250)),
+    }
+
+
 def test_canceled_orders_are_not_revenue(built):
     total = one(built.con, "SELECT sum(revenue) FROM kpi_monthly")
     assert total == pytest.approx(730)  # would be 1729 if the canceled 999 were counted
